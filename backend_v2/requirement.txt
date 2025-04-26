@@ -5,4 +5,4 @@ google-generativeai
 vertexai
 google-auth
 google-genai
-google-cloud-aiplatform
+google-cloud-aiplatform 

@@ -2,25 +2,27 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend_v2
-    container_name: rag-backend
+    build:
+      context: .
+      dockerfile: backend_v2/Dockerfile
+    container_name: backend
     ports:
       - "8000:8000"
+    env_file:
+      - backend_v2/.env
     volumes:
       - ./backend_v2/app:/app
-    env_file:
-      - ./backend_v2/app/.env
-    environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
-    depends_on:
-      - frontend
+    restart: always
 
   frontend:
-    build: ./rag-frontend
-    container_name: rag-frontend
+    build:
+      context: .
+      dockerfile: rag-frontend/Dockerfile
+    container_name: frontend
     ports:
       - "3000:3000"
+    depends_on:
+      - backend
     volumes:
       - ./rag-frontend:/app
-    environment:
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+    restart: always
