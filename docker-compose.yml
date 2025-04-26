@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend_v2
+    container_name: rag-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend_v2/app:/app
+    env_file:
+      - ./backend_v2/app/.env
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+    depends_on:
+      - frontend
+
+  frontend:
+    build: ./rag-frontend
+    container_name: rag-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./rag-frontend:/app
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
