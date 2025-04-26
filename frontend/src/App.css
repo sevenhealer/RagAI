@@ -1,0 +1,188 @@
+.App {
+  font-family: sans-serif;
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+h2 {
+  color: #444;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-top: 0;
+}
+
+h3 {
+  color: #555;
+  margin-top: 20px;
+}
+
+.card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.ingest-form {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #eee;
+}
+.ingest-form:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.metadata-input {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px dashed #eee;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #555;
+}
+
+input[type="text"],
+input[type="url"],
+textarea {
+  width: calc(100% - 22px); /* Adjust width to account for padding/border */
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+textarea {
+   resize: vertical; /* Allow vertical resize */
+   min-height: 40px;
+}
+
+input[type="file"] {
+  margin-bottom: 15px;
+  display: block; /* Ensure file input is block level */
+}
+
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+  margin-top: 5px; /* Add some space above buttons */
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.results-section .loading-message,
+.loading-message { /* Added general loading message style */
+  color: #555;
+  font-style: italic;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.status-message {
+  color: #28a745; /* Green for success */
+  font-weight: bold;
+  margin: 15px 0;
+  padding: 10px;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+}
+
+.error-message {
+  color: #dc3545; /* Red for error */
+  font-weight: bold;
+  margin: 15px 0;
+  padding: 10px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+}
+
+.answer {
+  background-color: #e9f5ff;
+  border: 1px solid #b8d7ff; /* Corrected color */
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.answer p {
+    white-space: pre-wrap; /* Preserve line breaks from LLM */
+    margin: 0;
+}
+
+.context {
+  margin-top: 20px;
+}
+
+.context-chunk {
+  background-color: #f1f1f1;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 15px;
+  font-size: 0.9em;
+}
+
+.context-chunk strong {
+    color: #333;
+    display: inline-block; /* Helps with spacing */
+    margin-right: 5px; /* Space after bold label */
+    min-width: 70px; /* Align labels slightly */
+}
+
+.context-chunk pre {
+    background-color: #e7e7e7;
+    padding: 5px 8px;
+    border-radius: 3px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 0.85em;
+    max-height: 100px; /* Limit metadata height */
+    overflow-y: auto;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+.context-text {
+    background-color: #fff;
+    padding: 8px;
+    border: 1px dashed #ccc; /* Add slight border */
+    border-radius: 3px;
+    margin-top: 8px;
+    white-space: pre-wrap; /* Preserve whitespace/newlines */
+    max-height: 200px; /* Increase text preview height */
+    overflow-y: auto;
+    line-height: 1.4;
+}
