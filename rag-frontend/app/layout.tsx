@@ -9,7 +9,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "RAG Assistant",
   description: "Chat with your documents using AI",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -20,7 +19,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          storageKey="rag-theme-preference"
+        >
           {children}
         </ThemeProvider>
       </body>

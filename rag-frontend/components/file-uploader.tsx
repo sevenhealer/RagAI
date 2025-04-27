@@ -39,7 +39,7 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
       if (currentMode === "online") {
         uploadFiles(Array.from(e.dataTransfer.files))
       } else {
-        simulateUpload()
+        simulateUpload(Array.from(e.dataTransfer.files))
       }
     }
   }
@@ -49,12 +49,12 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
       if (currentMode === "online") {
         uploadFiles(Array.from(e.target.files))
       } else {
-        simulateUpload()
+        simulateUpload(Array.from(e.target.files))
       }
     }
   }
 
-  // Update the uploadFiles function to handle CORS errors better
+  // Improved upload function with better progress tracking
   const uploadFiles = async (files: File[]) => {
     setIsUploading(true)
     setProgress(0)
@@ -66,27 +66,56 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
         const formData = new FormData()
         formData.append("file", file)
 
-        // Update progress for multiple files
+        // Update progress for current file
         setProgress(Math.round((i / files.length) * 100))
 
         try {
-          const response = await fetch(getFullUrl("uploadEndpoint"), {
-            method: "POST",
-            body: formData,
-            // Add these headers for better CORS handling
-            headers: {
-              // Don't set Content-Type with FormData as it will be set automatically with the boundary
-            },
-            // Ensure credentials are included if your API requires authentication
-            credentials: "include",
+          // Create a mock XMLHttpRequest to track upload progress
+          const xhr = new XMLHttpRequest()
+
+          // Set up progress tracking
+          xhr.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+              const fileProgress = Math.round((event.loaded / event.total) * 100)
+              const overallProgress = Math.round(((i + fileProgress / 100) / files.length) * 100)
+              setProgress(overallProgress)
+            }
           })
 
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: "Failed to upload file" }))
-            throw new Error(errorData.detail || "Failed to upload file")
-          }
+          // Create a promise to handle the XHR
+          const uploadPromise = new Promise<any>((resolve, reject) => {
+            xhr.open("POST", getFullUrl("uploadEndpoint"))
 
-          const result = await response.json()
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                  const response = JSON.parse(xhr.responseText)
+                  resolve(response)
+                } catch (e) {
+                  resolve({ message: "File uploaded successfully" })
+                }
+              } else {
+                reject(new Error(`Upload failed with status ${xhr.status}`))
+              }
+            }
+
+            xhr.onerror = () => {
+              reject(new Error("Network error occurred during upload"))
+            }
+
+            xhr.send(formData)
+          })
+
+          // Wait for the upload to complete
+          const result = await uploadPromise
+
+          // Add document to the list
+          if (window.addDocument) {
+            window.addDocument({
+              id: result.file_id || `file-${Date.now()}`,
+              name: file.name,
+            })
+          }
 
           toast({
             title: "File Uploaded",
@@ -104,6 +133,7 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
       setProgress(100)
       setTimeout(() => {
         setIsUploading(false)
+        setProgress(0)
       }, 500)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred")
@@ -116,23 +146,40 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
     }
   }
 
-  const simulateUpload = () => {
+  // Improved simulation with actual files
+  const simulateUpload = (files: File[]) => {
     setIsUploading(true)
     setProgress(0)
 
+    let currentProgress = 0
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        const newProgress = prev + 10
-        if (newProgress >= 100) {
-          clearInterval(interval)
-          setTimeout(() => {
-            setIsUploading(false)
-          }, 500)
-          return 100
-        }
-        return newProgress
-      })
-    }, 300)
+      currentProgress += 5
+      setProgress(currentProgress)
+
+      if (currentProgress >= 100) {
+        clearInterval(interval)
+
+        // Add documents to local storage
+        files.forEach((file) => {
+          if (window.addDocument) {
+            window.addDocument({
+              id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+              name: file.name,
+            })
+          }
+        })
+
+        setTimeout(() => {
+          setIsUploading(false)
+          setProgress(0)
+
+          toast({
+            title: "Processing Complete",
+            description: `${files.length} file(s) processed successfully.`,
+          })
+        }, 500)
+      }
+    }, 100)
   }
 
   if (currentMode === "offline") {
@@ -168,7 +215,9 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
           <div className="w-full space-y-2">
             <Progress value={progress} className="h-2 w-full" />
             <p className="text-xs text-muted-foreground">
-              {currentMode === "manual" ? "Preparing document..." : "Processing document..."}
+              {progress < 100
+                ? `${currentMode === "manual" ? "Preparing" : "Processing"} document... ${progress}%`
+                : "Finalizing..."}
             </p>
           </div>
         ) : (

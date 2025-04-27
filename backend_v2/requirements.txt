@@ -2,7 +2,7 @@ fastapi
 uvicorn
 python-multipart
 google-generativeai
-vertexai
+langchain-google-vertexai
 google-auth
 google-genai
-google-cloud-aiplatform 
+google-cloud-aiplatform

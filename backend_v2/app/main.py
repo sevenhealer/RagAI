@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from typing import Optional
 import os
 import shutil
@@ -13,7 +12,7 @@ from google.genai.types import GenerateContentConfig, Retrieval, Tool, VertexRag
 # Config
 PROJECT_ID = "ragai-07"
 LOCATION = "us-central1"
-CREDENTIALS_PATH = "/Users/rohanchatterjee/Documents/Projects/RagAI/ragai-07-3af2fb185f78_new.json"
+CREDENTIALS_PATH = "/Users/rohanchatterjee/Documents/Projects/ragai-07-3af2fb185f78_new.json"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIALS_PATH
 
 vertexai.init(project=PROJECT_ID, location=LOCATION)
