@@ -7,10 +7,12 @@ import { FileText, Trash2, CloudOff, Cloud, RefreshCw } from "lucide-react"
 import type { OperationMode } from "@/components/mode-selector"
 import { useToast } from "@/hooks/use-toast"
 import { useApiConfig } from "@/hooks/use-api-config"
+import { useAuth } from "@/contexts/auth-context"
 
 interface Document {
   id: string
   name: string
+  display_name: string
   status: "processed" | "processing" | "failed"
   pages?: number
   location: "cloud" | "local"
@@ -25,11 +27,12 @@ export function DocumentList({ currentMode }: DocumentListProps) {
   const [documents, setDocuments] = useState<Document[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-  const { apiConfig, getFullUrl, isLoaded } = useApiConfig()
+  const { apiConfig, getFullUrl, getAuthHeaders, isLoaded } = useApiConfig()
+  const { isAuthenticated } = useAuth()
 
   // Function to fetch documents from API
   const fetchDocuments = async () => {
-    if (currentMode !== "online" || !isLoaded) {
+    if (currentMode !== "online" || !isLoaded || !isAuthenticated) {
       // Use local mock data for offline/manual modes
       const localDocs = localStorage.getItem("rag-documents")
       if (localDocs) {
@@ -44,75 +47,96 @@ export function DocumentList({ currentMode }: DocumentListProps) {
 
     setIsLoading(true)
     try {
+      console.log("Fetching documents from:", getFullUrl("documentsEndpoint"))
       // Try to fetch from API
-      const response = await fetch(`${apiConfig.baseUrl}/documents`, {
+      const response = await fetch(getFullUrl("documentsEndpoint"), {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
-        credentials: "include",
-      }).catch(() => null)
+      }).catch((error) => {
+        console.error("Fetch error:", error)
+        return null
+      })
 
       if (response && response.ok) {
         const data = await response.json()
-        if (data.documents) {
-          const transformedDocs = data.documents.map((doc: any) => ({
-            id: doc.file_id || doc.id,
-            name: doc.display_name || doc.name,
-            status: doc.status || "processed",
-            pages: doc.pages,
+        console.log("Documents API response:", data)
+
+        if (data) {
+          const transformedDocs = data.map((doc: any, index: number) => ({
+            id: doc.name || `file-${index}`,
+            name: doc.name || `file-${index}`,
+            display_name: doc.display_name || "Unknown Document",
+            status: "processed",
             location: "cloud",
-            timestamp: doc.timestamp,
+            timestamp: new Date().toISOString(),
           }))
           setDocuments(transformedDocs)
           localStorage.setItem("rag-documents", JSON.stringify(transformedDocs))
         }
       } else {
-        // If API fails, use fallback data
-        setDocuments([
-          {
-            id: "1",
-            name: "Sample Document.pdf",
-            status: "processed",
-            pages: 5,
-            location: "cloud",
-          },
-        ])
+        console.log("Using uploaded documents from localStorage")
+        // If API fails, use documents from localStorage
+        const localDocs = localStorage.getItem("rag-documents")
+        if (localDocs) {
+          try {
+            setDocuments(JSON.parse(localDocs))
+          } catch (e) {
+            console.error("Failed to parse local documents", e)
+            // Fallback to empty array
+            setDocuments([])
+          }
+        } else {
+          // No documents in localStorage
+          setDocuments([])
+        }
       }
     } catch (error) {
       console.error("Error fetching documents:", error)
       toast({
         title: "Error",
-        description: "Failed to fetch documents. Using sample data instead.",
+        description: "Failed to fetch documents.",
         variant: "destructive",
       })
 
-      // Fallback to sample data
-      setDocuments([
-        {
-          id: "1",
-          name: "Sample Document.pdf",
-          status: "processed",
-          pages: 5,
-          location: "cloud",
-        },
-      ])
+      // Try to use documents from localStorage
+      const localDocs = localStorage.getItem("rag-documents")
+      if (localDocs) {
+        try {
+          setDocuments(JSON.parse(localDocs))
+        } catch (e) {
+          console.error("Failed to parse local documents", e)
+          // Fallback to empty array
+          setDocuments([])
+        }
+      } else {
+        // No documents in localStorage
+        setDocuments([])
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
   // Delete a document
-  const deleteDocument = async (id: string) => {
+  const deleteDocument = async (id: string, displayName: string) => {
     try {
-      if (currentMode === "online" && isLoaded) {
-        await fetch(`${apiConfig.baseUrl}/documents/${id}`, {
+      if (currentMode === "online" && isLoaded && isAuthenticated) {
+        const response = await fetch(getFullUrl("deleteEndpoint"), {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
           },
-          credentials: "include",
+          body: JSON.stringify({ file_name: displayName }),
         })
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ detail: "Failed to delete document" }))
+          throw new Error(error.detail || "Failed to delete document")
+        }
       }
 
       // Remove from local state regardless of API success
@@ -128,17 +152,19 @@ export function DocumentList({ currentMode }: DocumentListProps) {
       console.error("Error deleting document:", error)
       toast({
         title: "Error",
-        description: "Failed to delete document.",
+        description: error instanceof Error ? error.message : "Failed to delete document",
         variant: "destructive",
       })
     }
   }
 
   // Add a document (called from FileUploader)
-  const addDocument = (doc: { name: string; id: string }) => {
+  const addDocument = (doc: { name: string; id: string; display_name: string }) => {
+    console.log("Adding document:", doc)
     const newDoc = {
       id: doc.id,
-      name: doc.name,
+      name: doc.id,
+      display_name: doc.display_name || doc.name,
       status: "processed" as const,
       location: "cloud" as const,
       timestamp: new Date().toISOString(),
@@ -161,7 +187,7 @@ export function DocumentList({ currentMode }: DocumentListProps) {
       // @ts-ignore
       delete window.addDocument
     }
-  }, [currentMode, isLoaded])
+  }, [currentMode, isLoaded, isAuthenticated])
 
   // Filter documents based on mode
   const filteredDocuments = documents.filter((doc) => {
@@ -217,7 +243,7 @@ export function DocumentList({ currentMode }: DocumentListProps) {
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-sm font-medium truncate max-w-[180px]">{doc.name}</p>
+              <p className="text-sm font-medium truncate max-w-[180px]">{doc.display_name}</p>
               <div className="flex items-center gap-2">
                 {doc.pages && <p className="text-xs text-muted-foreground">{doc.pages} pages</p>}
                 {doc.status === "processed" && (
@@ -247,7 +273,7 @@ export function DocumentList({ currentMode }: DocumentListProps) {
             variant="ghost"
             size="icon"
             className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => deleteDocument(doc.id)}
+            onClick={() => deleteDocument(doc.id, doc.display_name)}
           >
             <Trash2 className="h-4 w-4 text-muted-foreground" />
           </Button>

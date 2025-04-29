@@ -24,6 +24,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PipelineStatus } from "@/components/pipeline-status"
 import type { OperationMode } from "@/components/mode-selector"
 import { useApiConfig } from "@/hooks/use-api-config"
+import { useAuth } from "@/contexts/auth-context"
 
 interface ChatInterfaceProps {
   currentMode?: OperationMode
@@ -83,7 +84,8 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
   const [showPipeline, setShowPipeline] = useState(false)
   const [currentStage, setCurrentStage] = useState(2) // For demo, showing chunking in progress
   const [error, setError] = useState<string | null>(null)
-  const { apiConfig, getFullUrl, isLoaded } = useApiConfig()
+  const { apiConfig, getFullUrl, getAuthHeaders, isLoaded } = useApiConfig()
+  const { isAuthenticated } = useAuth()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Update welcome message based on mode
@@ -156,16 +158,17 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
     setIsLoading(true)
 
     try {
-      if (currentMode === "online" && isLoaded) {
+      if (currentMode === "online" && isLoaded && isAuthenticated) {
         // Use the API for online mode
         try {
-          const response = await fetch(`${getFullUrl("queryEndpoint")}?text=${encodeURIComponent(input)}`, {
-            // Add these headers for better CORS handling
+          console.log("Sending query to:", getFullUrl("queryEndpoint"))
+          const response = await fetch(getFullUrl("queryEndpoint"), {
+            method: "POST",
             headers: {
               "Content-Type": "application/json",
+              ...getAuthHeaders(),
             },
-            // Ensure credentials are included if your API requires authentication
-            credentials: "include",
+            body: JSON.stringify({ text: input }),
           })
 
           if (!response.ok) {
@@ -174,6 +177,7 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
           }
 
           const data = await response.json()
+          console.log("Query response:", data)
 
           const aiMessage: Message = {
             id: Date.now() + 1,
@@ -184,6 +188,7 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
 
           setMessages((prev) => [...prev, aiMessage])
         } catch (err) {
+          console.error("Query error:", err)
           if (err instanceof Error && err.toString().includes("CORS")) {
             throw new Error("CORS error: Your API server needs CORS configuration. Please check the backend setup.")
           } else {
@@ -221,6 +226,7 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
         }, 2000)
       }
     } catch (err) {
+      console.error("Chat error:", err)
       setError(err instanceof Error ? err.message : "An unknown error occurred")
     } finally {
       setIsLoading(false)
@@ -295,13 +301,17 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isLoading}
+            disabled={isLoading || (currentMode === "online" && !isAuthenticated)}
           />
           <div className="absolute right-4 bottom-4 flex items-center gap-2">
-            <Button variant="ghost" size="icon" disabled={isLoading}>
+            <Button variant="ghost" size="icon" disabled={isLoading || (currentMode === "online" && !isAuthenticated)}>
               <Paperclip className="h-4 w-4" />
             </Button>
-            <Button size="icon" onClick={handleSendMessage} disabled={!input.trim() || isLoading}>
+            <Button
+              size="icon"
+              onClick={handleSendMessage}
+              disabled={!input.trim() || isLoading || (currentMode === "online" && !isAuthenticated)}
+            >
               <SendHorizontal className="h-4 w-4" />
             </Button>
           </div>
@@ -310,7 +320,9 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
           {getModeIcon()}
           <p className="text-xs text-center text-muted-foreground">
             {currentMode === "online"
-              ? "RAG Assistant can make mistakes. Consider checking important information."
+              ? isAuthenticated
+                ? "RAG Assistant can make mistakes. Consider checking important information."
+                : "Please log in to use online mode."
               : currentMode === "offline"
                 ? "Offline mode: Using PyTesseract OCR and Llama 3 (8B)."
                 : "Manual mode: You control the processing steps."}

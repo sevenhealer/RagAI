@@ -33,21 +33,11 @@ rag_corpus = rag.create_corpus(
     ),
 )
 
-# Retrival config
-rag_retrieval_tool = Tool(
-    retrieval=Retrieval(
-        vertex_rag_store=VertexRagStore(
-            rag_corpora=[rag_corpus.name],
-            similarity_top_k=10,
-            vector_distance_threshold=0.5,
-        )
-    )
-)
+
 
 print(f"Corpus created: {rag_corpus.name}")
 
 
-MODEL_ID = "gemini-2.0-flash-001"
 
 
 app.add_middleware(
@@ -104,7 +94,18 @@ def retrieve_context(text: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+    
+MODEL_ID = "gemini-2.0-flash-001"
+# Retrival config
+rag_retrieval_tool = Tool(
+    retrieval=Retrieval(
+        vertex_rag_store=VertexRagStore(
+            rag_corpora=[rag_corpus.name],
+            similarity_top_k=10,
+            vector_distance_threshold=0.5,
+        )
+    )
+)
 @app.get("/query")
 def ask_with_gemini(text: str):
     try:

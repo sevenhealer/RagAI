@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { OperationMode } from "@/components/mode-selector"
 import { useApiConfig } from "@/hooks/use-api-config"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
 
 interface FileUploaderProps {
   currentMode: OperationMode
@@ -19,8 +20,9 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const { apiConfig, getFullUrl, isLoaded } = useApiConfig()
+  const { apiConfig, getFullUrl, getAuthHeaders, isLoaded } = useApiConfig()
   const { toast } = useToast()
+  const { isAuthenticated } = useAuth()
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -36,9 +38,9 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
     setIsDragging(false)
 
     if (e.dataTransfer.files.length > 0) {
-      if (currentMode === "online") {
+      if (currentMode === "online" && isAuthenticated) {
         uploadFiles(Array.from(e.dataTransfer.files))
-      } else {
+      } else if (currentMode !== "offline") {
         simulateUpload(Array.from(e.dataTransfer.files))
       }
     }
@@ -46,9 +48,9 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      if (currentMode === "online") {
+      if (currentMode === "online" && isAuthenticated) {
         uploadFiles(Array.from(e.target.files))
-      } else {
+      } else if (currentMode !== "offline") {
         simulateUpload(Array.from(e.target.files))
       }
     }
@@ -70,6 +72,8 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
         setProgress(Math.round((i / files.length) * 100))
 
         try {
+          console.log("Uploading to:", getFullUrl("uploadEndpoint"))
+
           // Create a mock XMLHttpRequest to track upload progress
           const xhr = new XMLHttpRequest()
 
@@ -78,6 +82,7 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
             if (event.lengthComputable) {
               const fileProgress = Math.round((event.loaded / event.total) * 100)
               const overallProgress = Math.round(((i + fileProgress / 100) / files.length) * 100)
+              console.log(`Upload progress: ${fileProgress}%, Overall: ${overallProgress}%`)
               setProgress(overallProgress)
             }
           })
@@ -86,13 +91,19 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
           const uploadPromise = new Promise<any>((resolve, reject) => {
             xhr.open("POST", getFullUrl("uploadEndpoint"))
 
+            // Add authorization header
+            const authHeaders = getAuthHeaders()
+            if (authHeaders.Authorization) {
+              xhr.setRequestHeader("Authorization", authHeaders.Authorization)
+            }
+
             xhr.onload = () => {
               if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                   const response = JSON.parse(xhr.responseText)
                   resolve(response)
                 } catch (e) {
-                  resolve({ message: "File uploaded successfully" })
+                  resolve({ message: "File uploaded successfully", file_id: `file-${Date.now()}` })
                 }
               } else {
                 reject(new Error(`Upload failed with status ${xhr.status}`))
@@ -108,12 +119,14 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
 
           // Wait for the upload to complete
           const result = await uploadPromise
+          console.log("Upload result:", result)
 
           // Add document to the list
           if (window.addDocument) {
             window.addDocument({
               id: result.file_id || `file-${Date.now()}`,
               name: file.name,
+              display_name: file.name,
             })
           }
 
@@ -122,6 +135,7 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
             description: `${file.name} has been uploaded successfully.`,
           })
         } catch (err) {
+          console.error("Upload error:", err)
           if (err instanceof Error && err.message.includes("CORS")) {
             throw new Error("CORS error: Your API server needs CORS configuration. Please check the backend setup.")
           } else {
@@ -136,6 +150,7 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
         setProgress(0)
       }, 500)
     } catch (err) {
+      console.error("Upload error:", err)
       setError(err instanceof Error ? err.message : "An unknown error occurred")
       toast({
         title: "Upload Failed",
@@ -165,6 +180,7 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
             window.addDocument({
               id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
               name: file.name,
+              display_name: file.name,
             })
           }
         })
@@ -189,6 +205,15 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
         <AlertDescription>
           Document upload is disabled in offline mode. Switch to online mode to upload new documents.
         </AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (currentMode === "online" && !isAuthenticated) {
+    return (
+      <Alert className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>Please log in to upload documents.</AlertDescription>
       </Alert>
     )
   }

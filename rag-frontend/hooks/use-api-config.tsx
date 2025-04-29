@@ -1,24 +1,28 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAuth } from "@/contexts/auth-context"
 
 export interface ApiEndpoints {
   baseUrl: string
   uploadEndpoint: string
-  retrieveEndpoint: string
+  deleteEndpoint: string
+  documentsEndpoint: string
   queryEndpoint: string
 }
 
 const defaultConfig: ApiEndpoints = {
   baseUrl: "http://localhost:8000",
-  uploadEndpoint: "/upload",
-  retrieveEndpoint: "/retrieve",
-  queryEndpoint: "/query",
+  uploadEndpoint: "/file/upload-file",
+  deleteEndpoint: "/file/delete-file",
+  documentsEndpoint: "/file/documents",
+  queryEndpoint: "/rag/query",
 }
 
 export function useApiConfig() {
   const [apiConfig, setApiConfig] = useState<ApiEndpoints>(defaultConfig)
   const [isLoaded, setIsLoaded] = useState(false)
+  const { user } = useAuth()
 
   useEffect(() => {
     // Load from localStorage on client side
@@ -42,10 +46,18 @@ export function useApiConfig() {
     return `${apiConfig.baseUrl}${apiConfig[endpoint]}`
   }
 
+  const getAuthHeaders = () => {
+    if (!user) return {}
+    return {
+      Authorization: `Bearer ${user.token}`,
+    }
+  }
+
   return {
     apiConfig,
     updateApiConfig,
     isLoaded,
     getFullUrl,
+    getAuthHeaders,
   }
 }

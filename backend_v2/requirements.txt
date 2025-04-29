@@ -1,8 +1,7 @@
-fastapi
-uvicorn
-python-multipart
-google-generativeai
+fastapi 
+uvicorn 
+pymongo 
+passlib[bcrypt]
 langchain-google-vertexai
-google-auth
 google-genai
 google-cloud-aiplatform
