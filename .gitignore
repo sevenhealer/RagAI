@@ -1,6 +1,58 @@
-# Ignore Python environment files
-__pycache__/
-*.pyc
+# === Global Ignore ===
+*.env
+.env
+.env.*
+**/.env
+**/.env.*
 
-# Ignore local env file in backend_v2
-/backend_v2/.env
+# === Python (backend + backend_v2) ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+*.db
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+.venv/
+venv/
+ENV/
+env/
+.mypy_cache/
+.pytest_cache/
+.coverage
+.cache/
+.tox/
+.idea/
+.vscode/
+
+# === Node (rag-frontend) ===
+node_modules/
+.next/
+out/
+build/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+
+# === Vercel & deployment ===
+.vercel/
+.DS_Store
+
+# === OS-specific ===
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# === Git ===
+*.swp
+*.swo
