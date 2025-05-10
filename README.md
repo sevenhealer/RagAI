@@ -1,149 +1,139 @@
-# 📄 Project Title: **RAG AI Backend and Frontend**
+# 🌐 Full Stack RAG AI Project
 
-This project is an end-to-end **Retrieval-Augmented Generation (RAG) system** built with:
-- **FastAPI** for backend APIs
-- **Vertex AI** for embeddings and document management
-- **Gemini 2.0 Flash Model** for final answering
-- **Next.js** frontend to upload files, ask questions, and get intelligent answers from your uploaded documents!
+A full-stack project integrating a **FastAPI backend** and a **Next.js frontend**, connected to **Google Cloud Vertex AI**, **MongoDB**, and using **JWT authentication**.
 
 ---
 
-# 🛠️ Tech Stack
+## 🛠️ Tech Stack
 
-| Frontend  | Backend  | Cloud  |
-|:---------|:---------|:-------|
-| Next.js  | FastAPI   | Google Vertex AI (RAG + Gemini) |
+- **Backend**: FastAPI, Uvicorn, Google Vertex AI SDK, MongoDB
+- **Frontend**: Next.js
+- **Database**: MongoDB
+- **Auth**: JWT
+- **Cloud AI**: Google Cloud Vertex AI (GenAI)
 
 ---
 
-# ⚙️ Setup Instructions
+## 📦 Setup Instructions
 
-## 1. Clone the repository
+### 1. Clone the Repository
+
 ```bash
-git clone https://github.com/your-username/rag-ai-project.git
-cd rag-ai-project
+git clone https://github.com/your-repo/RagAI.git
+cd RagAI
 ```
 
 ---
 
-## 2. Backend Setup
+### 2. Backend Setup
 
-### 2.1 Create Python Virtual Environment
 ```bash
+cd backend
 python3 -m venv venv
-source venv/bin/activate  # Mac/Linux
-venv\Scripts\activate     # Windows
+source venv/bin/activate
 ```
 
-### 2.2 Install dependencies
+Copy your Google Cloud credentials file to the `backend` directory and name it:
+
+```bash
+credentials.json
+```
+
+---
+
+### 3. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-> Create a `requirements.txt` with:
-> ```
-> fastapi
-> uvicorn
-> google-cloud-aiplatform
-> google-generativeai
-> pydantic
-> python-multipart
-> ```
-
 ---
 
-### 2.3 Setup Google Cloud Credentials
-- Create a **Service Account** on GCP with `Vertex AI User` and `Vertex AI Administrator` roles.
-- Download the **JSON key**.
-- Update the `CREDENTIALS_PATH` in your backend `main.py`:
+### 4. Create `.env` File
 
-```python
-CREDENTIALS_PATH = "/path/to/your/service-account.json"
+In the `backend` directory, create a `.env` file with the following variables:
+
+```env
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/<dbname>?retryWrites=true&w=majority
+JWT_SECRET=your_jwt_secret
+PROJECT_ID=your-google-cloud-project-id
+LOCATION=us-central1
+CREDENTIALS_PATH=credentials.json
 ```
 
 ---
 
-### 2.4 Run the FastAPI server
+### 5. Start the Backend Server
+
 ```bash
 uvicorn main:app --reload
 ```
 
-Server will run at `http://localhost:8000`.
+API will be available at `http://localhost:8000`.
 
 ---
 
-## 3. Frontend Setup (Next.js)
-
-Navigate to the frontend folder:
+### 6. Frontend Setup
 
 ```bash
-cd frontend
-```
-
-Install frontend dependencies:
-
-```bash
+cd ../frontend
 npm install
-```
-
-Update your API base URLs in frontend code to match FastAPI (`http://localhost:8000`).
-
-Run the frontend server:
-
-```bash
 npm run dev
 ```
 
-Frontend will run at `http://localhost:3000`.
+Frontend will be available at `http://localhost:3000`.
 
 ---
 
-# 🛤️ API Endpoints
+## ✅ Environment Requirements
 
-| Method | Endpoint        | Description                         |
-|:------|:----------------|:------------------------------------|
-| POST  | `/upload`        | Upload a file to RAG corpus         |
-| GET   | `/retrieve`      | Retrieve contexts based on query   |
-| GET   | `/query`         | Ask questions using Gemini + RAG   |
-
----
-
-# 📸 Screenshots
-
-> _Add screenshots of the frontend upload page, chat page, or backend console._
+- Python 3.8+
+- Node.js 16+
+- Google Cloud account with Vertex AI enabled
+- MongoDB Atlas or local MongoDB instance
 
 ---
 
-# 📚 Folder Structure
+## 🧠 Features
+
+- JWT-based user authentication
+- MongoDB for persistent storage
+- Integration with Google Vertex AI for RAG (Retrieval-Augmented Generation)
+- Next.js frontend for user interaction
+
+---
+
+## 📁 Project Structure
 
 ```
-/backend
-    - main.py
-    - requirements.txt
-/frontend
-    - pages/
-    - components/
-    - public/
-    - next.config.js
+rag-ai-project/
+│
+├── backend/
+│   ├── main.py
+│   ├── requirements.txt
+│   ├── .env
+│   └── credentials.json
+│
+└── frontend/
+    ├── pages/
+    ├── components/
+    └── package.json
 ```
 
 ---
 
-# ✅ Future Improvements
-- Add file types validation (.pdf, .docx only).
-- Allow deleting files from corpus.
-- Handle authentication for frontend users.
-- Deploy backend (Cloud Run, AWS, etc.).
-- Deploy frontend (Vercel, Netlify).
+## 🧪 Running in Production
+
+- Use `gunicorn` or `uvicorn` with ASGI for backend production deployment.
+- Build the Next.js frontend with:
+
+```bash
+npm run build
+npm start
+```
 
 ---
 
-# 📢 Acknowledgements
-- [Google Vertex AI](https://cloud.google.com/vertex-ai)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Next.js](https://nextjs.org/)
-- [Gemini Flash Model](https://cloud.google.com/vertex-ai/docs/generative-ai/learn/models)
+## 📜 License
 
----
-
-# 🌟 Star this repo if you like the project!
+MIT License – feel free to use and adapt.

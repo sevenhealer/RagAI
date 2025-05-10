@@ -2,6 +2,8 @@ fastapi
 uvicorn 
 pymongo 
 passlib[bcrypt]
-langchain-google-vertexai
 google-genai
 google-cloud-aiplatform
+dotenv
+PyJWT
+python-multipart
