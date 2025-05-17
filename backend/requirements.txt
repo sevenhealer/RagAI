@@ -1,9 +1,9 @@
 fastapi 
 uvicorn 
+dotenv
 pymongo 
 passlib[bcrypt]
 google-genai
 google-cloud-aiplatform
-dotenv
 PyJWT
 python-multipart

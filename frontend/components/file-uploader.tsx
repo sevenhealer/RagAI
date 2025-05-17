@@ -247,18 +247,19 @@ export function FileUploader({ currentMode }: FileUploaderProps) {
           </div>
         ) : (
           <div className="flex gap-2">
-            <Button size="sm" className="relative" onClick={() => document.getElementById("file-upload")?.click()}>
-              <input
-                id="file-upload"
-                type="file"
-                className="absolute inset-0 cursor-pointer opacity-0"
-                onChange={handleFileChange}
-                multiple
-                accept=".pdf,.docx,.txt"
-              />
-              Select Files
+            <input
+              id="file-upload"
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+              multiple
+              accept=".pdf,.docx,.txt"
+            />
+            <Button size="sm" onClick={() => document.getElementById("file-upload")?.click()}>
+            Select Files
             </Button>
           </div>
+
         )}
 
         {error && (
