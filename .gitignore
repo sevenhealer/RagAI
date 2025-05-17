@@ -1,58 +1,27 @@
-# === Global Ignore ===
-*.env
-.env
-.env.*
+# Ignore Python environments globally
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+
+# Node-related
+**/node_modules/
+**/.next/
+**/.turbo/
+**/dist/
+**/.env*
+
+# System/Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Log files
+*.log
+
+# Docker
+**/Dockerfile
+**/.dockerignore
+
+# dotenv
 **/.env
 **/.env.*
-
-# === Python (backend + backend_v2) ===
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.log
-*.sqlite3
-*.db
-*.egg
-*.egg-info/
-dist/
-build/
-.eggs/
-pip-wheel-metadata/
-.venv/
-venv/
-ENV/
-env/
-.mypy_cache/
-.pytest_cache/
-.coverage
-.cache/
-.tox/
-.idea/
-.vscode/
-
-# === Node (rag-frontend) ===
-node_modules/
-.next/
-out/
-build/
-dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-*.tsbuildinfo
-next-env.d.ts
-
-# === Vercel & deployment ===
-.vercel/
-.DS_Store
-
-# === OS-specific ===
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# === Git ===
-*.swp
-*.swo
