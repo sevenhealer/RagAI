@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from models.user import UserSignup, UserLogin
-from services.auth_service import signup_user, signin_user
+from app.models.schemas import UserSignup, UserLogin
+from app.services.auth_service import signup_user, signin_user
 
 router = APIRouter()
 

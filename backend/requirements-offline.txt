@@ -1,0 +1,10 @@
+# Optional offline-mode stack (Ollama + ChromaDB + OCR).
+# Staged but NOT yet wired into the app. Install with:
+#   pip install -r requirements.txt -r requirements-offline.txt
+# System binaries also required for OCR: tesseract-ocr, poppler-utils.
+ollama
+chromadb
+pypdf
+pytesseract
+pdf2image
+Pillow

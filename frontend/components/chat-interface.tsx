@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChatMessage } from "@/components/chat-message"
+import { ChatMessage, type Message } from "@/components/chat-message"
 import {
   SendHorizontal,
   Paperclip,
@@ -28,13 +28,6 @@ import { useAuth } from "@/contexts/auth-context"
 
 interface ChatInterfaceProps {
   currentMode?: OperationMode
-}
-
-interface Message {
-  id: number
-  role: "user" | "assistant"
-  content: string
-  timestamp: Date
 }
 
 // Mock data for demonstration
@@ -87,6 +80,8 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
   const { apiConfig, getFullUrl, getAuthHeaders, isLoaded } = useApiConfig()
   const { isAuthenticated } = useAuth()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  // Conversation/session id for multi-turn memory; reset when the mode resets.
+  const sessionIdRef = useRef<string | null>(null)
 
   // Update welcome message based on mode
   useEffect(() => {
@@ -98,6 +93,8 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
     }
 
     setMessages([welcomeMessage])
+    // Start a fresh conversation when the mode changes.
+    sessionIdRef.current = null
 
     // Show pipeline status in manual mode when a document is being processed
     setShowPipeline(currentMode === "manual")
@@ -159,41 +156,73 @@ export function ChatInterface({ currentMode = "online" }: ChatInterfaceProps) {
 
     try {
       if (currentMode === "online" && isLoaded && isAuthenticated) {
-        // Use the API for online mode
+        // Stream the response from the API for online mode.
+        const assistantId = Date.now() + 1
+        setMessages((prev) => [
+          ...prev,
+          { id: assistantId, role: "assistant", content: "", timestamp: new Date() },
+        ])
+
+        const updateAssistant = (updater: (m: Message) => Message) =>
+          setMessages((prev) => prev.map((m) => (m.id === assistantId ? updater(m) : m)))
+
         try {
-          console.log("Sending query to:", getFullUrl("queryEndpoint"))
-          const response = await fetch(getFullUrl("queryEndpoint"), {
+          const response = await fetch(getFullUrl("streamEndpoint"), {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               ...getAuthHeaders(),
             },
-            body: JSON.stringify({ text: input }),
+            body: JSON.stringify({ text: userMessage.content, session_id: sessionIdRef.current }),
           })
 
-          if (!response.ok) {
+          if (!response.ok || !response.body) {
             const errorData = await response.json().catch(() => ({ detail: "Failed to get response from API" }))
             throw new Error(errorData.detail || "Failed to get response from API")
           }
 
-          const data = await response.json()
-          console.log("Query response:", data)
+          const reader = response.body.getReader()
+          const decoder = new TextDecoder()
+          let buffer = ""
 
-          const aiMessage: Message = {
-            id: Date.now() + 1,
-            role: "assistant",
-            content: data.answer || "I couldn't find an answer to your question.",
-            timestamp: new Date(),
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+
+            // SSE events are separated by a blank line.
+            const events = buffer.split("\n\n")
+            buffer = events.pop() ?? ""
+
+            for (const evt of events) {
+              const lines = evt.split("\n")
+              const isDone = lines.some((l) => l.startsWith("event: done"))
+              const dataLine = lines.find((l) => l.startsWith("data:"))
+              if (!dataLine) continue
+
+              const payload = JSON.parse(dataLine.slice(5).trim())
+              if (isDone) {
+                if (payload.session_id) sessionIdRef.current = payload.session_id
+                if (payload.citations?.length) {
+                  updateAssistant((m) => ({ ...m, citations: payload.citations }))
+                }
+              } else if (payload.token) {
+                updateAssistant((m) => ({ ...m, content: m.content + payload.token }))
+              }
+            }
           }
 
-          setMessages((prev) => [...prev, aiMessage])
+          // If nothing streamed, surface a fallback message.
+          updateAssistant((m) => ({
+            ...m,
+            content: m.content || "I couldn't find an answer to your question.",
+          }))
         } catch (err) {
-          console.error("Query error:", err)
+          console.error("Stream error:", err)
           if (err instanceof Error && err.toString().includes("CORS")) {
             throw new Error("CORS error: Your API server needs CORS configuration. Please check the backend setup.")
-          } else {
-            throw err
           }
+          throw err
         }
       } else {
         // Simulate response for offline and manual modes

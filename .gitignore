@@ -1,27 +1,31 @@
-# Ignore Python environments globally
+# Python
 **/venv/
+**/.venv/
 **/__pycache__/
 **/*.py[cod]
+**/.pytest_cache/
 
-# Node-related
+# Node / Next.js
 **/node_modules/
 **/.next/
 **/.turbo/
 **/dist/
-**/.env*
 
-# System/Editor
+# Secrets — never commit real env files or service-account keys
+.env
+**/.env
+**/.env.local
+!**/.env.example
+**/credentials.json
+backend/sixth-tempo-*.json
+
+# Local data (offline ChromaDB store, temp files)
+**/data/
+
+# System / editor
 .DS_Store
 .vscode/
 .idea/
 
-# Log files
+# Logs
 *.log
-
-# Docker
-**/Dockerfile
-**/.dockerignore
-
-# dotenv
-**/.env
-**/.env.*

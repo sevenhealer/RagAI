@@ -1,28 +1,40 @@
-version: '3.8'
-
+# One-command run:  docker compose up --build
+# Requires a root .env (copy from .env.example) and backend/credentials.json.
 services:
   backend:
     build:
-      context: .
-      dockerfile: backend_v2/Dockerfile
-    container_name: backend
+      context: ./backend
+    image: ragai-backend
+    container_name: ragai-backend
+    env_file:
+      - ./.env
+    environment:
+      # Path is relative to the container WORKDIR (/app). Comment out on GCP
+      # instances that use Application Default Credentials instead of a key file.
+      - CREDENTIALS_PATH=credentials.json
+    volumes:
+      # Service-account key. Remove this line on hosts that use ADC.
+      - ./backend/credentials.json:/app/credentials.json:ro
+      # Persist offline ChromaDB data (when offline mode is enabled).
+      - ragai-data:/app/data
     ports:
       - "8000:8000"
-    env_file:
-      - backend_v2/.env
-    volumes:
-      - ./backend_v2/app:/app
-    restart: always
+    extra_hosts:
+      # Lets the backend reach a host-run Ollama (offline mode) at host.docker.internal.
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
 
   frontend:
     build:
-      context: .
-      dockerfile: rag-frontend/Dockerfile
-    container_name: frontend
+      context: ./frontend
+    image: ragai-frontend
+    container_name: ragai-frontend
     ports:
       - "3000:3000"
     depends_on:
-      - backend
-    volumes:
-      - ./rag-frontend:/app
-    restart: always
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  ragai-data:

@@ -9,6 +9,7 @@ export interface ApiEndpoints {
   deleteEndpoint: string
   documentsEndpoint: string
   queryEndpoint: string
+  streamEndpoint: string
 }
 
 const defaultConfig: ApiEndpoints = {
@@ -17,6 +18,7 @@ const defaultConfig: ApiEndpoints = {
   deleteEndpoint: "/file/delete-file",
   documentsEndpoint: "/file/documents",
   queryEndpoint: "/rag/query",
+  streamEndpoint: "/rag/stream",
 }
 
 export function useApiConfig() {
@@ -29,7 +31,9 @@ export function useApiConfig() {
     const savedConfig = localStorage.getItem("rag-api-config")
     if (savedConfig) {
       try {
-        setApiConfig(JSON.parse(savedConfig))
+        // Merge with defaults so configs saved before new endpoints were added
+        // still resolve the new keys (e.g. streamEndpoint).
+        setApiConfig({ ...defaultConfig, ...JSON.parse(savedConfig) })
       } catch (e) {
         console.error("Failed to parse saved API config", e)
       }

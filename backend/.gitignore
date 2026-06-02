@@ -1,5 +1,16 @@
+# Secrets (GCP service-account keys have unpredictable names; ignore all JSON)
 .env
+credentials.json
+*.json
+
+# Local data (ChromaDB / offline store, temp files)
+data/
+*.log
+
+# Python
 __pycache__/
 *.py[cod]
 venv/
-*.log
+.venv/
+*.egg-info/
+.pytest_cache/
